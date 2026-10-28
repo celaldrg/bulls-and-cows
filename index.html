@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bulls and Cows</title>
+  <meta name="description" content="Bulls and Cows in your browser: crack the computer's secret number from bulls and cows, or let a minimax solver crack yours. English and Turkish, no sign-up, no ads.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Bulls and Cows">
+  <meta property="og:description" content="Crack the computer's secret number from bulls and cows, or let a minimax solver crack yours. A free browser game in English and Turkish.">
+  <meta property="og:url" content="https://celaldrg.github.io/bulls-and-cows/">
+  <meta property="og:image" content="https://celaldrg.github.io/bulls-and-cows/docs/screenshot.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Ccircle cx='22' cy='32' r='11' fill='%23fca5a5'/%3E%3Ccircle cx='44' cy='32' r='8.5' fill='none' stroke='%23fcd34d' stroke-width='5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <div class="app">
+    <div class="stage">
+      <header class="top">
+        <h1 class="brand">
+          <span class="brand-mark" aria-hidden="true"><i class="peg peg-bull"></i><i class="peg peg-cow"></i></span>
+          <span class="brand-name" data-i18n="title">Bulls and Cows</span>
+        </h1>
+        <div id="tabs" class="tabs" role="tablist" data-i18n-aria="modes">
+          <button id="tab-guess" class="tab" type="button" role="tab" aria-selected="true" aria-controls="panel-guess" data-mode="guess" data-i18n="tabGuess">You guess</button>
+          <button id="tab-solve" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-solve" data-mode="solve" tabindex="-1" data-i18n="tabSolve">Computer guesses</button>
+        </div>
+        <div class="actions">
+          <button id="new-game" class="btn btn-accent" type="button" data-i18n="newGame">New game</button>
+          <button id="lang" class="btn lang" type="button"><span data-i18n="langButton">TR</span> <span class="sr-only" data-i18n="langSwitch">Switch to Turkish</span></button>
+        </div>
+      </header>
+
+      <section class="card board" aria-labelledby="board-title">
+        <div class="board-head">
+          <h2 id="board-title" class="card-title"></h2>
+          <span id="board-count" class="count-badge" hidden></span>
+          <span class="legend" aria-hidden="true">
+            <span class="legend-item"><i class="peg peg-bull"></i><span data-i18n="legendBull">Bull</span></span>
+            <span class="legend-item"><i class="peg peg-cow"></i><span data-i18n="legendCow">Cow</span></span>
+          </span>
+        </div>
+        <p id="board-empty" class="board-empty"></p>
+        <ol id="board-list" class="board-list"></ol>
+      </section>
+
+      <section class="card play">
+        <div id="panel-guess" class="panel" role="tabpanel" aria-labelledby="tab-guess">
+          <div class="panel-head">
+            <h2 class="card-title" data-i18n="notesTitle">Notes</h2>
+            <p class="hint" data-i18n="notesHint">Tap a digit: excluded → confirmed → clear</p>
+          </div>
+          <div id="notes" class="notes" role="group" data-i18n-aria="notesTitle"></div>
+          <div id="pad" class="pad" role="group" data-i18n-aria="keypad">
+            <div id="slots" class="slots" role="img"></div>
+            <button id="key-delete" class="key key-delete" type="button" data-i18n-aria="keyDelete">⌫</button>
+            <button id="key-guess" class="key key-guess" type="button" data-i18n-aria="keyGuess">✓</button>
+          </div>
+          <p class="hint keys-hint" data-i18n="keysGuess">Keys: 0–9 type, Backspace deletes, Enter guesses, Shift + digit marks a note.</p>
+        </div>
+
+        <div id="panel-solve" class="panel" role="tabpanel" aria-labelledby="tab-solve" hidden>
+          <div class="panel-head">
+            <h2 id="solve-title" class="panel-title"></h2>
+            <span id="remaining" class="pill"></span>
+          </div>
+          <div id="solve-guess" class="solve-guess" role="img"></div>
+          <p id="solve-intro" class="hint"></p>
+          <div id="steppers" class="steppers">
+            <div class="stepper stepper-bulls" role="group" aria-labelledby="bulls-label">
+              <span class="stepper-label"><i class="peg peg-bull" aria-hidden="true"></i><span id="bulls-label" data-i18n="bulls">Bulls</span></span>
+              <button class="step" type="button" data-field="bulls" data-step="-1" data-i18n-aria="fewerBulls">−</button>
+              <output id="bulls-value" class="step-value">0</output>
+              <button class="step" type="button" data-field="bulls" data-step="1" data-i18n-aria="moreBulls">+</button>
+            </div>
+            <div class="stepper stepper-cows" role="group" aria-labelledby="cows-label">
+              <span class="stepper-label"><i class="peg peg-cow" aria-hidden="true"></i><span id="cows-label" data-i18n="cows">Cows</span></span>
+              <button class="step" type="button" data-field="cows" data-step="-1" data-i18n-aria="fewerCows">−</button>
+              <output id="cows-value" class="step-value">0</output>
+              <button class="step" type="button" data-field="cows" data-step="1" data-i18n-aria="moreCows">+</button>
+            </div>
+          </div>
+          <p id="solve-alert" class="alert" role="alert" hidden></p>
+          <div class="solve-actions">
+            <button id="undo" class="btn" type="button" data-i18n="undo">Undo</button>
+            <button id="answer" class="btn btn-accent" type="button" data-i18n="answer">Answer</button>
+          </div>
+          <p class="hint keys-hint" data-i18n="keysSolve">Keys: B / C add a bull / cow (with Shift: remove one), Enter answers, Backspace undoes.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="card options" aria-labelledby="settings-title">
+      <h2 id="settings-title" class="card-title" data-i18n="settingsTitle">Settings</h2>
+      <div class="setting">
+        <span id="digits-label" class="setting-label" data-i18n="digitsLabel">Digits</span>
+        <div id="digits" class="seg" role="group" aria-labelledby="digits-label">
+          <button type="button" data-value="3" aria-pressed="false">3</button>
+          <button type="button" data-value="4" aria-pressed="true">4</button>
+          <button type="button" data-value="5" aria-pressed="false">5</button>
+        </div>
+      </div>
+      <div class="setting">
+        <span id="zero-label" class="setting-label" data-i18n="leadingZeroLabel">Can start with 0</span>
+        <button id="leading-zero" class="switch" type="button" role="switch" aria-checked="true" aria-labelledby="zero-label"><span class="switch-track"></span></button>
+      </div>
+      <div class="setting">
+        <span id="level-label" class="setting-label" data-i18n="levelLabel">Computer level</span>
+        <div id="level" class="seg" role="group" aria-labelledby="level-label">
+          <button type="button" data-value="hard" aria-pressed="true" data-i18n="levelHard">Hard</button>
+          <button type="button" data-value="easy" aria-pressed="false" data-i18n="levelEasy">Easy</button>
+        </div>
+      </div>
+      <p class="hint" data-i18n="settingsNote">Changing a setting starts a new game.</p>
+      <h2 class="card-title stats-title" data-i18n="statsTitle">Statistics</h2>
+      <p id="stats-scope" class="hint"></p>
+      <dl class="stats">
+        <div><dt data-i18n="statsGames">Games</dt><dd id="stat-games">0</dd></div>
+        <div><dt data-i18n="statsAverage">Average</dt><dd id="stat-average">–</dd></div>
+        <div><dt data-i18n="statsBest">Best</dt><dd id="stat-best">–</dd></div>
+      </dl>
+    </section>
+
+    <footer class="foot">
+      <a href="https://github.com/celaldrg/bulls-and-cows" data-i18n="footer">MIT · Source on GitHub</a>
+    </footer>
+  </div>
+
+  <dialog id="win" class="win" aria-labelledby="win-title" aria-describedby="win-text">
+    <div class="win-body">
+      <div id="win-code" class="win-code" aria-hidden="true"></div>
+      <h2 id="win-title" class="win-title"></h2>
+      <p id="win-text" class="win-text"></p>
+      <div class="win-actions">
+        <button id="win-close" class="btn" type="button" data-i18n="close">Close</button>
+        <button id="win-again" class="btn btn-accent" type="button" data-i18n="playAgain">Play again</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>
